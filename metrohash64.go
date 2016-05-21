@@ -20,8 +20,8 @@ const (
 	k3 = 0x30BC5B29
 )
 
-// MetroHash64 implements the 64-bit variant of the metrohash algorithm
-// MetroHash64 implements hash.Hash64 interface
+// MetroHash64 implements the 64-bit variant of the metrohash algorithm.
+// MetroHash64 implements hash.Hash and hash.Hash64 interfaces.
 type MetroHash64 struct {
 	seed    uint64    // Seed for the algorithm
 	state   [4]uint64 // Internal state variables

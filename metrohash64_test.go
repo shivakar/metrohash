@@ -1,9 +1,17 @@
 package metrohash_test
 
 import (
+	"crypto/md5"
+	"crypto/rand"
+	"crypto/sha1"
+	"fmt"
+	"hash"
+	"hash/crc64"
+	"hash/fnv"
 	"testing"
 
 	"github.com/shivakar/metrohash"
+	"github.com/shivakar/xxhash"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -116,4 +124,101 @@ func Test_StreamingWrite(t *testing.T) {
 		assert.Equal(r1.Uint64(), r2.Uint64())
 		assert.Equal(r1.String(), r2.String())
 	}
+}
+
+//Examples
+func ExampleMetroHash64_usage() {
+	// Create a new instance of the hash engine with default seed
+	h := metrohash.NewMetroHash64()
+
+	// Create a new instance of the hash engine with custom seed
+	_ = metrohash.NewSeedMetroHash64(uint64(10))
+
+	// Write some data to the hash
+	h.Write([]byte("Hello, World!!"))
+
+	// Write some more data to the hash
+	h.Write([]byte("How are you doing?"))
+
+	// Get the current hash as a byte array
+	b := h.Sum(nil)
+	fmt.Println(b)
+
+	// Get the current hash as an integer (uint64) (little-endian)
+	fmt.Println(h.Uint64())
+
+	// Get the current hash as a hexadecimal string (big-endian)
+	fmt.Println(h.String())
+
+	// Reset the hash
+	h.Reset()
+
+	// Output:
+	// [205 190 61 93 89 212 164 71]
+	// 14825354494498612295
+	// cdbe3d5d59d4a447
+
+}
+
+// Benchmarks
+
+func benchHash(b *testing.B, h hash.Hash, in []byte) {
+	var out []byte
+	for i := 0; i < b.N; i++ {
+		h.Write(in)
+		out = h.Sum(nil)
+		h.Reset()
+	}
+	_ = out
+}
+
+func Benchmark_MetroHash64_1kb(b *testing.B) {
+	in := make([]byte, 1024)
+	rand.Read(in)
+	h := metrohash.NewMetroHash64()
+	benchHash(b, h, in)
+}
+
+func Benchmark_MetroHash64_1mb(b *testing.B) {
+	in := make([]byte, 1024*1024)
+	rand.Read(in)
+	h := metrohash.NewMetroHash64()
+	benchHash(b, h, in)
+}
+
+const inStr = "Hello, World!! How are you doing? Learn alphabet: abcdefghijklmnopqrstuvwxyz"
+
+func Benchmark_MetroHash64(b *testing.B) {
+	h := metrohash.NewMetroHash64()
+	benchHash(b, h, []byte(inStr))
+}
+
+func Benchmark_FNV64a(b *testing.B) {
+	h := fnv.New64a()
+	benchHash(b, h, []byte(inStr))
+}
+
+func Benchmark_FNV64(b *testing.B) {
+	h := fnv.New64()
+	benchHash(b, h, []byte(inStr))
+}
+
+func Benchmark_CRC64ISO(b *testing.B) {
+	h := crc64.New(crc64.MakeTable(crc64.ISO))
+	benchHash(b, h, []byte(inStr))
+}
+
+func Benchmark_SHA1(b *testing.B) {
+	h := sha1.New()
+	benchHash(b, h, []byte(inStr))
+}
+
+func Benchmark_MD5(b *testing.B) {
+	h := md5.New()
+	benchHash(b, h, []byte(inStr))
+}
+
+func Benchmark_XXHash64(b *testing.B) {
+	h := xxhash.NewXXHash64()
+	benchHash(b, h, []byte(inStr))
 }
