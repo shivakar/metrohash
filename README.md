@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/shivakar/metrohash.svg?branch=master)](https://travis-ci.org/shivakar/metrohash) [![Coverage Status](https://coveralls.io/repos/github/shivakar/metrohash/badge.svg?branch=master)](https://coveralls.io/github/shivakar/metrohash?branch=master) [![GoDoc](https://godoc.org/github.com/shivakar/metrohash?status.svg)](https://godoc.org/github.com/shivakar/metrohash)
 # metrohash
 A pure Go port of metrohash algorithm
 
