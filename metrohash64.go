@@ -14,20 +14,21 @@ var (
 
 // Constants
 const (
-	k0 = 0xD6D018F5
-	k1 = 0xA2AA033B
-	k2 = 0x62992FC1
-	k3 = 0x30BC5B29
+	k0         = 0xD6D018F5
+	k1         = 0xA2AA033B
+	k2         = 0x62992FC1
+	k3         = 0x30BC5B29
+	cBlockSize = 32
 )
 
 // MetroHash64 implements the 64-bit variant of the metrohash algorithm.
 // MetroHash64 implements hash.Hash and hash.Hash64 interfaces.
 type MetroHash64 struct {
-	seed    uint64    // Seed for the algorithm
-	state   [4]uint64 // Internal state variables
-	mem     [32]byte  // Buffer to store input updates less than 32 bytes
-	memsize uint32    // Number of unprocessed elements in buffer
-	len     uint64    // Total length of the input processed (in bytes)
+	seed    uint64           // Seed for the algorithm
+	state   [4]uint64        // Internal state variables
+	mem     [cBlockSize]byte // Buffer to store input less than 32 bytes
+	memsize uint32           // Number of unprocessed elements in buffer
+	len     uint64           // Total length of the input processed (in bytes)
 }
 
 // NewSeedMetroHash64 returns an instance of MetroHash64 with the specified seed.
@@ -82,7 +83,7 @@ func (m *MetroHash64) Size() int {
 
 // BlockSize returns the hash's underlying block size.
 func (m *MetroHash64) BlockSize() int {
-	return 32
+	return cBlockSize
 }
 
 // Write adds more data to the running hash.
@@ -91,7 +92,7 @@ func (m *MetroHash64) Write(input []byte) (int, error) {
 	l := len(input)
 	m.len += uint64(l)
 
-	if m.memsize+uint32(l) < 32 {
+	if m.memsize+uint32(l) < cBlockSize {
 		// New data fits into the buffer
 		m.memsize += uint32(copy(m.mem[m.memsize:], input))
 		return l, nil
@@ -100,7 +101,7 @@ func (m *MetroHash64) Write(input []byte) (int, error) {
 	if m.memsize > 0 {
 		// new data does not fit into the buffer
 		// and some data is still unprocessed from previous update
-		n := 32 - m.memsize
+		n := cBlockSize - m.memsize
 		copy(m.mem[m.memsize:], input[:n])
 
 		m.state[0] += binary.LittleEndian.Uint64(m.mem[:8:8]) * k0
@@ -119,8 +120,8 @@ func (m *MetroHash64) Write(input []byte) (int, error) {
 		m.memsize = 0
 	}
 
-	if len(input) >= 32 {
-		for len(input) >= 32 {
+	if len(input) >= cBlockSize {
+		for len(input) >= cBlockSize {
 			m.state[0] += binary.LittleEndian.Uint64(input[:8:8]) * k0
 			m.state[0] = rotr64_29(m.state[0]) + m.state[2]
 
@@ -133,7 +134,7 @@ func (m *MetroHash64) Write(input []byte) (int, error) {
 			m.state[3] += binary.LittleEndian.Uint64(input[24:32:32]) * k3
 			m.state[3] = rotr64_29(m.state[3]) + m.state[1]
 
-			input = input[32:len(input):len(input)]
+			input = input[cBlockSize:len(input):len(input)]
 		}
 	}
 
@@ -153,7 +154,7 @@ func (m *MetroHash64) Write(input []byte) (int, error) {
 func (m *MetroHash64) Sum64() uint64 {
 	v0, v1, v2, v3 := m.state[0], m.state[1], m.state[2], m.state[3]
 
-	if m.len >= 32 {
+	if m.len >= cBlockSize {
 		v2 ^= rotr64_37((v0+v3)*k0+v1) * k1
 		v3 ^= rotr64_37((v1+v2)*k1+v0) * k0
 		v0 ^= rotr64_37((v0+v2)*k0+v3) * k1

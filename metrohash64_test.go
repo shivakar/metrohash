@@ -167,9 +167,9 @@ func benchHash(b *testing.B, h hash.Hash, in []byte) {
 	b.SetBytes(int64(len(in)))
 	for i := 0; i < b.N; i++ {
 		h.Write(in)
-		out = h.Sum(nil)
-		h.Reset()
 	}
+	out = h.Sum(nil)
+	h.Reset()
 	_ = out
 }
 
